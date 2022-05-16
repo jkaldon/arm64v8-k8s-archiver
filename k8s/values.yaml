@@ -1,0 +1,53 @@
+# Default values for arm64v8-k8s-archiver.
+# This is a YAML-formatted file.
+# Declare variables to be passed into your templates.
+
+schedule: "0 7 */1 * *"
+successfulJobsHistoryLimit: 1
+failedJobsHistoryLimit: 2
+
+image:
+  repository: jkaldon/arm64v8-k8s-archiver
+  # Overrides the image tag whose default is the chart appVersion.
+  #tag: "alpine3.15-X"
+  pullSecrets: []
+  pullPolicy: IfNotPresent
+  securityContext:
+    # capabilities:
+    #   drop:
+    #   - ALL
+    # readOnlyRootFilesystem: true
+    runAsNonRoot: true
+    runAsUser: 1000
+  command:
+  - /home/k8s-archiver/k8s-archiver.sh
+  env: 
+  - name: K8S_ARCHIVER_REPO
+    value: "git@github.com:jkaldon/k8s-archiver.git"
+  - name: K8S_ARCHIVER_EMAIL_ADDRESS
+    value: "k8s-archiver@kaldon.com"
+  - name: K8S_ARCHIVER_EMAIL_NAME
+    value: "K8s Archiver"
+  - name: K8S_ARCHIVER_PROFILES
+    value: "default"
+  #********************************************************************************
+  # WARNING: It is ill-advised to store secrets unencrypted in a git repository!
+  #********************************************************************************
+  - name: K8S_ARCHIVER_RESOURCES
+    value: "clusterrole,clusterrolebindings,configmap,cronjobs,daemonset,deployment,hpa,ingress,job,limitranges,namespace,networkpolicies,nodes,pdb,pod,psp,pv,pvc,replicaset,rc,service,statefulset,storageclasses,volumeattachments"
+
+persistence:
+  mounts:
+  - name: k8s-archiver
+    mountPath: /home/k8s-archiver/.secret
+  volumes:
+  - name: k8s-archiver
+    secret:
+      secretName: k8s-archiver
+      defaultMode: 288
+      
+podAnnotations: {}
+
+podSecurityContext:
+  fsGroup: 1000
+

@@ -1,0 +1,41 @@
+apiVersion: batch/v1
+kind: CronJob
+metadata:
+  name: {{ .Chart.Name }}
+spec:
+  schedule: "{{ .Values.schedule }}"
+  concurrencyPolicy: Forbid
+  startingDeadlineSeconds: 36000
+  successfulJobsHistoryLimit: {{ .Values.successfulJobsHistoryLimit }}
+  failedJobsHistoryLimit: {{ .Values.failedJobsHistoryLimit }}
+  jobTemplate:
+    spec:
+      template:
+        metadata:
+          {{- with .Values.podAnnotations }}
+          annotations: {{- toYaml . | nindent 12 }}
+          {{- end }}
+        spec:
+          {{- with .Values.image.pullSecrets }}
+          imagePullSecrets: {{- toYaml . | nindent 12 }}
+          {{- end }}
+          securityContext: {{- toYaml .Values.podSecurityContext | nindent 12 }}
+          restartPolicy: Never
+          containers:
+          - name: {{ .Chart.Name }}
+            image: {{ .Values.image.repository }}:{{ .Values.image.tag | default .Chart.AppVersion }}
+            imagePullPolicy: IfNotPresent
+            securityContext: {{- toYaml .Values.image.securityContext | nindent 14 }}
+            {{- with .Values.image.command }}
+            command: {{- toYaml . | nindent 14 }}
+            {{- end }}
+            args: {{- toYaml .Values.image.args | nindent 14 }}
+            env: {{- toYaml .Values.image.env | nindent 14 }}
+            volumeMounts:
+              {{- if .Values.persistence.mounts }}
+              {{- toYaml .Values.persistence.mounts | nindent 16 }}
+              {{- end }}
+          volumes:
+            {{- if .Values.persistence.volumes }}
+            {{- toYaml .Values.persistence.volumes | nindent 12 }}
+            {{- end }}
